@@ -1,0 +1,15 @@
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: enterprise-app
+  namespace: enterprise-mig
+spec:
+  type: ClusterIP
+  selector:
+    app: enterprise-app
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http

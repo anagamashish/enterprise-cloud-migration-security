@@ -1,0 +1,47 @@
+
+name: ci-cd
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: pip install -r workloads/app/requirements.txt
+      - name: Unit tests (placeholder)
+        run: echo "OK"
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.REGISTRY }}/enterprise-app:${{ github.sha }} workloads/app
+      - name: Login & Push
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          echo ${{ secrets.REGISTRY_PASSWORD }} | docker login ${{ secrets.REGISTRY }} -u ${{ secrets.REGISTRY_USER }} --password-stdin
+          docker push ${{ secrets.REGISTRY }}/enterprise-app:${{ github.sha }}
+
+  deploy:
+    needs: build-test-scan
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set image in manifest
+        run: sed -i 's|ghcr.io/your-user/enterprise-app:latest|${{ secrets.REGISTRY }}/enterprise-app:${{ github.sha }}|' k8s/base/deployment.yaml
+      - uses: azure/setup-kubectl@v4
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > ~/.kube/config
+      - name: Apply manifests
+        run: |
+          kubectl apply -f k8s/base/namespace.yaml
+          kubectl apply -f k8s/base/deployment.yaml
+          kubectl apply -f k8s/base/service.yaml
+          kubectl apply -f k8s/base/hpa.yaml
+          kubectl apply -f k8s/monitoring/prometheus.yaml

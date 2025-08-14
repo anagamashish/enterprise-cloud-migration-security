@@ -1,0 +1,12 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: enterprise-app
+  namespace: enterprise-mig
+spec:
+  template:
+    spec:
+      containers:
+      - name: api
+        image: <AZURE_REGISTRY>/enterprise-app:latest

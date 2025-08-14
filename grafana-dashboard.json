@@ -1,0 +1,39 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Request Rate",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[1m]))"
+        }
+      ],
+      "id": 1
+    },
+    {
+      "type": "graph",
+      "title": "Error Rate (non-2xx)",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status!~\"2..\"}[1m]))"
+        }
+      ],
+      "id": 2
+    },
+    {
+      "type": "graph",
+      "title": "Latency p95 (ms)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(request_latency_ms_bucket[5m])) by (le))"
+        }
+      ],
+      "id": 3
+    }
+  ],
+  "schemaVersion": 39,
+  "title": "Enterprise App SLOs"
+}
